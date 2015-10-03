@@ -1,4 +1,4 @@
-/* style sheet for index.html homer picture */
+/* style sheet for index.html- re-arrange homer picture */
 
 .homer{width:166.5px; height:125px;}
 
@@ -47,4 +47,3 @@
 	and (max-width: 600px){
 		.homer {background:url("homer.jpg") -166.5px -375px;}
 	}
-	
