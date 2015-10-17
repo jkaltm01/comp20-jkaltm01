@@ -1,4 +1,5 @@
-//
+// lab.js -- opens JSON file using XMLHttpRequest, parses JSON data,
+// 		     and outputs messages in HTML
 
 function parse(){
 
@@ -8,7 +9,7 @@ function parse(){
 	jsondata.send();
 }
 
-function reqListener () {
+function reqListener(){
 
 	var parsedObjects = JSON.parse(this.responseText);
 	elem = document.getElementById("messages");
