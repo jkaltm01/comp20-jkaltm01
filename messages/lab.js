@@ -4,7 +4,7 @@ function parse(){
 
 	var jsondata = new XMLHttpRequest();
 	jsondata.addEventListener("load", reqListener);
-	jsondata.open("GET", "http://tuftsdev.github.io/comp20-jkaltman/messages/data.json", true);
+	jsondata.open("GET", "http://messagehub.herokuapp.com/messages.json", true);
 	jsondata.send();
 }
 
