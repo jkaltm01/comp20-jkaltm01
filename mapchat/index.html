@@ -21,15 +21,17 @@
 			var map;
 			var marker;
 			var infowindow = new google.maps.InfoWindow();
+
 			
-			function init()
-			{
+			function init() {
 				map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
 				getMyLocation();
 			}
 
 			function sendLocation(myLat, myLng) {
-				request.open("POST", "https://secret-about-box.herokuapp.com/sendLocation", true);
+				if(request.open("POST", "https://secret-about-box.herokuapp.com/sendLocation", true)) {
+					console.log("open working");
+				}
 				// Step 2: Set up callback function to deal with HTTP response data
 				request.onreadystatechange = function() {
 					if (request.readyState == 4) {
@@ -44,7 +46,11 @@
 				};
 		// Step 3: trigger the HTTP request
 		// The argument for send() --data that you want to send to web server
-				request.send(null);
+				var args = "login=***&lat="+myLat+"&lng="+myLng+"message=4"
+
+				if(request.send(args)) {
+					console.log("send working");
+				}
 			}
 			
 			function getMyLocation() {
