@@ -27,12 +27,32 @@
 				map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
 				getMyLocation();
 			}
+
+			function sendLocation(myLat, myLng) {
+				request.open("POST", "https://secret-about-box.herokuapp.com/sendLocation", true);
+				// Step 2: Set up callback function to deal with HTTP response data
+				request.onreadystatechange = function() {
+					if (request.readyState == 4) {
+						console.log("Got the data back!");
+						data = request.responseText;
+						console.log(data);
+						loc = JSON.parse(data);
+					}
+					else {
+						console.log("In progress...");
+					}
+				};
+		// Step 3: trigger the HTTP request
+		// The argument for send() --data that you want to send to web server
+				request.send(null);
+			}
 			
 			function getMyLocation() {
 				if (navigator.geolocation) { // the navigator.geolocation object is supported on your browser
 					navigator.geolocation.getCurrentPosition(function(position) {
 						myLat = position.coords.latitude;
-						myLng = position.coords.longitude;
+						myLng = position.coords.longitude;			
+						sendLocation(myLat, myLng);
 						renderMap();
 					});
 				}
@@ -51,7 +71,7 @@
 				// Create a marker
 				marker = new google.maps.Marker({
 					position: me,
-					title: "Here I Am!"
+					title: "Current Location"
 				});
 				marker.setMap(map);
 					
