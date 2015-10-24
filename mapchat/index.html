@@ -13,6 +13,7 @@
 			var myLng = 0;
 			var request = new XMLHttpRequest();
 			var me = new google.maps.LatLng(myLat, myLng);
+			var loc;
 			var myOptions = {
 						zoom: 13, // The larger the zoom number, the bigger the zoom
 						center: me,
@@ -29,13 +30,12 @@
 			}
 
 			function sendLocation(myLat, myLng) {
-				if(request.open("POST", "https://secret-about-box.herokuapp.com/sendLocation", true)) {
-					console.log("open working");
-				}
+				request.open("POST", "https://secret-about-box.herokuapp.com/sendLocation", false);
+
+				request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 				// Step 2: Set up callback function to deal with HTTP response data
 				request.onreadystatechange = function() {
 					if (request.readyState == 4) {
-						console.log("Got the data back!");
 						data = request.responseText;
 						console.log(data);
 						loc = JSON.parse(data);
@@ -44,13 +44,11 @@
 						console.log("In progress...");
 					}
 				};
+
 		// Step 3: trigger the HTTP request
 		// The argument for send()--data that you want to send to web server
-				var args = "login=HawkVasquez&lat="+myLat+"&lng="+myLng+"&message=4"
-
-				if(request.send(args)) {
-					console.log("send working");
-				}
+				var args = "login=HawkVasquez&lat="+myLat+"&lng="+myLng+"&message=4";
+				request.send(args);
 			}
 			
 			function getMyLocation() {
@@ -86,7 +84,46 @@
 					infowindow.setContent(marker.title);
 					infowindow.open(map, marker);
 				});
+
+				// Display other people on map
+				for (i = 0; i < loc.length; i++) {
+					console.log(loc[i]);
+					other_marker = new google.maps.Marker({
+						position: new google.maps.LatLng(loc[i].lat, loc[i].lng),
+						title: String(loc[i].login),
+						message: String(loc[i].message),
+						distance: String(distanceFromMe(loc[i].lat, loc[i].lng, myLat, myLng))
+					});
+
+					other_marker.setMap(map);
+
+					// Open info window on click of other people's markers
+				other_marker.addListener('click', function() {
+					infowindow.setContent(this.title+"<br>"+this.message+"<br>"+this.distance);
+					infowindow.open(map, this);
+				});
 			}
+			function distanceFromMe(lat1, lng1, lat2, lng2) {
+
+				Number.prototype.toRad = function() {
+   					return this * Math.PI / 180;
+				}
+
+				var R = 3959; // miles
+				var phi1 = lat1.toRad();
+				var phi2 = lat2.toRad();
+				var del_phi = (lat2-lat1).toRad();
+				var del_lambda = (lng2-lng1).toRad();
+
+				var a = Math.sin(del_phi/2) * Math.sin(del_phi/2) +
+        		Math.cos(phi1) * Math.cos(phi2) *
+        		Math.sin(del_lambda/2) * Math.sin(del_lambda/2);
+				var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+				var d = R * c;
+				return d;
+			}
+		}
 		</script>
 	</head>
 	
