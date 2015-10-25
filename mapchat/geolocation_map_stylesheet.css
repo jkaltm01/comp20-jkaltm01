@@ -1,11 +1,11 @@
 /* stylesheet for geolocation map */
 
-/* Absolutely necessary for Google Maps version 3 */
+/*  Necessary for Google Maps version 3 */
 html {
 	height: 100%;
 }
 
-/* Absolutely necessary for Google Maps version 3 */
+/* Necessary for Google Maps version 3 */
 body {
 	height: 100%;
 	margin: 0px;
