@@ -81,8 +81,7 @@
 
 				// Display other people on map
 				for (i = 0; i < loc.length; i++) {
-					console.log(loc[i]);
-
+					
 					// doesn't place two markers ontop of each other
 					if (loc[i].lat == myLat && loc[i].lng == myLng) {
 						continue;
@@ -122,7 +121,7 @@
         		Math.cos(phi1) * Math.cos(phi2) *
         		Math.sin(del_lambda/2) * Math.sin(del_lambda/2);
 				var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-				
+
 				var d = R * c;
 				return d;
 			}
