@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 
 <html>
-
 	<head>
 		<title>Geolocation Map</title>
 		<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
@@ -11,12 +10,12 @@
 		<script>
 			var myLat = 0;
 			var myLng = 0;
-			var imgURI = "unique_image.jpeg";
+			var imgURI = "unique_image.jpeg";	// for unique image
 			var request = new XMLHttpRequest();
 			var me = new google.maps.LatLng(myLat, myLng);
 			var loc;
 			var myOptions = {
-						zoom: 13, // The larger the zoom number, the bigger the zoom
+						zoom: 13,
 						center: me,
 						mapTypeId: google.maps.MapTypeId.ROADMAP
 					};
@@ -24,7 +23,6 @@
 			var marker;
 			var infowindow = new google.maps.InfoWindow();
 
-			
 			function init() {
 				map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
 				getMyLocation();
@@ -34,20 +32,15 @@
 				request.open("POST", "https://secret-about-box.herokuapp.com/sendLocation", false);
 
 				request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-				// Step 2: Set up callback function to deal with HTTP response data
+				// Set up callback function to deal with HTTP response data
 				request.onreadystatechange = function() {
 					if (request.readyState == 4) {
 						data = request.responseText;
-						console.log(data);
 						loc = JSON.parse(data);
-					}
-					else {
-						console.log("In progress...");
 					}
 				};
 
-		// Step 3: trigger the HTTP request
-		// The argument for send()--data that you want to send to web server
+		// Trigger the HTTP request
 				var args = "login=HawkVasquez&lat="+myLat+"&lng="+myLng+"&message=4";
 				request.send(args);
 			}
@@ -66,8 +59,7 @@
 				}
 			}
 
-			function renderMap()
-			{
+			function renderMap() {
 				me = new google.maps.LatLng(myLat, myLng);
 				
 				// Update map and go there...
@@ -96,6 +88,7 @@
 						continue;
 					}
 
+					// Creates other markers
 					other_marker = new google.maps.Marker({
 						position: new google.maps.LatLng(loc[i].lat, loc[i].lng),
 						title: String(loc[i].login),
@@ -111,6 +104,8 @@
 					infowindow.open(map, this);
 				});
 			}
+
+			// Haversine Formula to compute distance between two points
 			function distanceFromMe(lat1, lng1, lat2, lng2) {
 
 				Number.prototype.toRad = function() {
