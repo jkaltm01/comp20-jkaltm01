@@ -15,7 +15,7 @@
 			var me = new google.maps.LatLng(myLat, myLng);
 			var loc;
 			var myOptions = {
-						zoom: 13,
+						zoom: 15,
 						center: me,
 						mapTypeId: google.maps.MapTypeId.ROADMAP
 					};
@@ -68,7 +68,7 @@
 				// Create a marker
 				marker = new google.maps.Marker({
 					position: me,
-					title: "Current Location",
+					title: "My Current Location",
 					icon: imgURI
 				});
 				marker.setMap(map);
