@@ -14,7 +14,7 @@
 			var request = new XMLHttpRequest();
 			var me = new google.maps.LatLng(myLat, myLng);
 			var loc;
-			var myOptions = {
+			var myOptions = {	// options for map and zoom
 				zoom: 15,
 				center: me,
 				mapTypeId: google.maps.MapTypeId.ROADMAP
@@ -104,7 +104,7 @@
 				});
 			}
 
-			// Haversine Formula to compute distance between two points
+			// Haversine Formula to compute distance between two geopoints
 			function distanceFromMe(lat1, lng1, lat2, lng2) {
 
 				Number.prototype.toRad = function() {
