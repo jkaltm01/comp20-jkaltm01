@@ -22,6 +22,7 @@
 	 			// create timestamp for current time and date
 	 			var timestamp = new Date(Date.now()).toString();
 	 			var msg = $(this).val();
+	 			$(this).val("");	// clears entry box after each enter
 
 	 			var message = timestamp+" - "+msg;
 	 			$("#log").prepend("<p>"+message+"</p>");
@@ -30,7 +31,9 @@
 	 			// adds previous message to array
 	 			if(localStorage["messages"]) {
 	 				msgs = JSON.parse(localStorage["messages"]);
-	 				messages.push(msgs);
+	 				for(key in msgs){
+	 					messages.push(msgs[key]);
+	 				}
 	 			}
 	 			messages.push(message);
 	 			localStorage["messages"] = JSON.stringify(messages);
