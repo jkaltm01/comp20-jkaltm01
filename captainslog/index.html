@@ -7,6 +7,8 @@
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 	<script>
 	 $('document').ready(function() {
+	 	
+	 	// adds message to div when page loads
 	 	if(localStorage["messages"]){
 	 		var storedMSG = JSON.parse(localStorage["messages"]);
 			for (key in storedMSG) {
@@ -14,14 +16,18 @@
 			}
 	 	}
 	 	
+	 	// on keypress of enter
 	 	$("#msg").keypress(function(e) {
-	 		if(e.which == 13) {
+	 		if(e.which == 13) {		// note: 13 = 'enter'
+	 			// create timestamp for current time and date
 	 			var timestamp = new Date(Date.now()).toString();
 	 			var msg = $(this).val();
 
 	 			var message = timestamp+" - "+msg;
 	 			$("#log").prepend("<p>"+message+"</p>");
 	 			var messages = [];
+
+	 			// adds previous message to array
 	 			if(localStorage["messages"]) {
 	 				msgs = JSON.parse(localStorage["messages"]);
 	 				messages.push(msgs);
