@@ -7,13 +7,29 @@
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 	<script>
 	 $('document').ready(function() {
+	 	if(localStorage["messages"]){
+	 		var storedMSG = JSON.parse(localStorage["messages"]);
+			for (key in storedMSG) {
+				$("#log").prepend("<p>"+storedMSG[key]+"</p>");
+			}
+	 	}
+	 	
 	 	$("#msg").keypress(function(e) {
 	 		if(e.which == 13) {
-	 			$("#log").prepend("<p> ");
+	 			var timestamp = new Date(Date.now()).toString();
+	 			var msg = $(this).val();
+
+	 			var message = timestamp+" - "+msg;
+	 			$("#log").prepend("<p>"+message+"</p>");
+	 			var messages = [];
+	 			if(localStorage["messages"]) {
+	 				msgs = JSON.parse(localStorage["messages"]);
+	 				messages.push(msgs);
+	 			}
+	 			messages.push(message);
+	 			localStorage["messages"] = JSON.stringify(messages);
 	 		}
-
-	 		});
-
+	 	});
 	 });
 	</script>
 </head>
@@ -22,5 +38,5 @@
 	<h1>Captain's Log</h1>
 	<h3>New entry: <input type="text" id="msg" name="msg" size="30" /></h3>
 	<div id="log"></div>
-</body>*/
+</body>
 </html>
