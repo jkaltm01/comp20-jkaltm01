@@ -111,8 +111,12 @@
    					return this * Math.PI / 180;
 				}
 
+				function toRad(number){
+					return number*Math.PI/180;
+				}
+				
 				var R = 3959; // miles
-				var phi1 = lat1.toRad();
+				var phi1 = toRad(lat1);
 				var phi2 = lat2.toRad();
 				var del_phi = (lat2-lat1).toRad();
 				var del_lambda = (lng2-lng1).toRad();
