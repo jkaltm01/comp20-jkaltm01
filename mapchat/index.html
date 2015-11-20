@@ -29,7 +29,7 @@
 			}
 
 			function sendLocation(myLat, myLng) {
-				request.open("POST", "https://safe-shore-4767.herokuapp.com/sendLocation", false);
+				request.open("POST", "https://safe-shore-4767.herokuapp.com/sendLocation", true);
 
 				request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 				// Set up callback function to deal with HTTP response data
@@ -37,6 +37,7 @@
 					if (request.readyState == 4) {
 						data = request.responseText;
 						loc = JSON.parse(data);
+						renderMap();
 					}
 				};
 
@@ -51,7 +52,7 @@
 						myLat = position.coords.latitude;
 						myLng = position.coords.longitude;			
 						sendLocation(myLat, myLng);
-						renderMap();
+						
 					});
 				}
 				else {
