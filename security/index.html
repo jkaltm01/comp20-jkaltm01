@@ -15,11 +15,11 @@
 
 <h2>Methodology</h2>
 
-<p>Testing was first carried out "black-box", using just what would be available to an attacker. However, I ran all code locally, and therefore did have to modify it slightly to connect to a local mongo instance and not Heroku's. Using just simple tools (<code>curl</code> and an HTML form I'd previously written to test my own code), I found multiple vulnerabilities. I then reviewed the code to find more logic errors and opportunities for server-side exploitation.</p>
+<p>Testing was first carried out "black-box", using just what would be available to an attacker. Attacks were performed without reading the source code. Then, I downloaded the source code of the application and performed "white box" testing. For example, after reading the source code, I noticed I could perform a Cross-Site Scripting attack and tried it out. By using just simple tools (<code>curl</code> and Postman), I found multiple vulnerabilities. I then reviewed the code to find more logic errors and opportunities for server-side exploitation.</p>
 
 <h2>Abstract of Findings</h2>
 
-<p>As with most security issues, all the vulnerabilities in this application stem from putting too much faith in external input and assuming, not asserting, its correctness. Multiple vulnerabilities let an attacker crash the website by submitting unexpectedly-formatted scores or user searches. Fortunately, the site does prevent code that attackers could submit as a score from running in users' browsers when they visit the site, which could change the site's appearance or crash a user's browser. However, other websites that store their scores in ScoreCenter are at risk of the same attack, unless they also use proper security checks against the results ScoreCenter gives them.</p>
+<p>As with most security issues, all the vulnerabilities in this application stem from putting too much faith in external input and assuming, not asserting, its correctness. Multiple vulnerabilities let an attacker flood the database with invalid data, which can crash the server. Fortunately, the site does prevent anyone with invalid logins from submitting bad data or flooding the database, but users with valid logins can still submit invalid data. For example, users with valid logins can inject malicious data onto the site, which can change the site's appearance, re-route the client to another site, or crash a user's browser. Other websites that store data using the MapChat server are also at risk of the same attacks, unless they use proper security checks against the results that the server gives them.</p>
 
 <h2>Issues Found</h2>
 
