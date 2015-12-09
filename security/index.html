@@ -24,91 +24,61 @@
 <h2>Issues Found</h2>
 
 <ol>
-<li><p><strong>Cross-Cross-Site Scripting</strong></p>
+<li><p><strong>Cross-Site Scripting</strong></p>
+
+<ul>
+<li>Affects POST API</li>
+<li><span class="high">High</span>: this flaw makes MapChat a significant security risk for other sites that expect it to handle data correctly, so exposing it could cause a mass exodus from the product. However, the issue is easily-resolvable.</li>
+<li>Data submitted via the POST API is not escaped, so it could include JavaScript or HTML (in place of a message) that a client's application would execute if it didn't include its own escaping. Though XSS is avoided on the web interface by escaping brackets (no <code>&lt;script&gt;</code>) and ampersands (<code>&amp;#x3C;</code> won't produce <code>&lt;</code>) an attacker still can use MapChat to attack a client application's code. For example, running <code>curl --data "login=mchow&amp;lat=100&amp;lng=100&amp;message=&lt;script&gt;alert("You've been hacked")&lt;/script&gt;" https://morning-taiga-8499.herokuapp.com/sendLocation</code> will inject the script as the message in the database, and causes an alert to pop up on the checkins site:
+<table class="galleryTable">
+<tr><td><img src="pre-injection_pic.png" alt="pre-injection" title="Site before injection" /></td>
+<td><img src="post-injection_pic.png" alt="post-injection" title="Site after injection" /></td></tr>
+</table></li>
+<li>This issue can be resolved by escaping user input before it enters the database. For example, commonly-dangerous characters can be escaped to their HTML-code equivalents, then the input can be filtered through a whitelist of allowable characters, such as <code>str.match(/[\d\w\s\]|[\~\!\@\#\$\^\*\-\_\+\;]*/g).join('');</code>. This same escaping can be applied retroactively using <code>db.collection.update()</code>. The user input should never be trusted, so it is important to sanitize all data. If you remove the ability for data to be interpreted as code, such as changing &lt; to '&amp;lt' and &gt; to '&amp;gt', XSS payload samples can be avoided.</li>
+</ul></li>
+
+<li><p><strong>Cross-Site Scripting on GET API</strong></p>
 
 <ul>
 <li>Affects GET API</li>
-<li><span class="high">High</span>: this flaw makes ScoreCenter a significant security risk for other sites that expect it to handle data correctly, so exposing it could cause a mass exodus from the product. However, the issue is easily-resolvable, and offending submissions can also be fixed retroactively.</li>
-<li>Data submitted via the POST API is not escaped, so it could include JavaScript or HTML (in place of a username or score) that a client's application would execute if it didn't include its own escaping. Though XSS is avoided on the web interface by escaping brackets (no <code>&lt;script&gt;</code>) and ampersands (<code>&amp;#x3C;</code> won't produce <code>&lt;</code>), which is <a href="https://github.com/visionmedia/jade/blob/master/Readme.md#features">done automatically</a> by the Jade template engine used, an attacker still can use ScoreCenter to attack a client application's code. For example, running <code>curl --data "game_title=frogger&amp;username=&lt;iframe src='http://omfgdogs.com'&gt;&lt;/iframe&gt;&amp;score=1000000" localhost:3000/submit.json</code> will not inject the amusing iframe into the ScoreCenter web interface, but might affect an unsuspecting client:
+<li><span class="mod">High</span>: a simple injection can change the appearance of the website or can re-route clients to a different website, but the vulnerability is very easily resolvable.</li>
+<li>As noted before, the data submitted is not escaped. Therefore, an attacker can submit a script as a message in the data, which can break the website. On the homepage of the website, the client can see the malicious data entered or can be re-routed to a different website. For example, running <code>curl --data "login=mchow&amp;lat=100&amp;lng=100&amp;message=&lt;script&gt;window.location='http://4chan.org'&lt;/script&gt;" https://morning-taiga-8499.herokuapp.com/sendLocation</code> will inject the script as the message in the database, and causes the homepage to be immediately re-routed to 4chan.org.
 <table class="galleryTable">
-<tr><td><img src="img/pre-xss-client.png" alt="pre-injection" title="Client site before injection" /></td>
-<td><img src="img/post-xss-client.png" alt="post-injection" title="Client site after injection" /></td></tr>
+<tr><td><img src="pre-injection_pic.png" alt="pre-injection" title="Site before injection" /></td>
+<td><img src="4chan.png" alt="post-injection" title="Site after injection" /></td></tr>
 </table></li>
-<li>This issue can be resolved by escaping user input before it enters the database. For example, commonly-dangerous characters can be escaped to their HTML-code equivalents, then the input can be filtered through a whitelist of allowable characters, such as <code>str.match(/[\d\w\s\]|[\~\!\@\#\$\^\*\-\_\+\;]*/g).join('');</code>. This same escaping can be applied retroactively using <code>db.collection.update()</code>.</li>
+<li>This issue could be resolved as stated before, about sanitizing user input.
 </ul></li>
-<li><p><strong>Server crash on invalid JSON</strong></p>
+
+<li><p><strong>Invalid Data Entry</strong></p>
 
 <ul>
-<li>Affects GET API</li>
-<li><span class="mod">Moderate</span>: a simple attack can crash the Node web server, but the vulnerability is very easily resolvable</li>
-<li>As noted before, the data submitted is not escaped. Therefore, an attacker can submit data that results in malformed JSON (such as extra <code>,</code> or <code>"</code> characters), which makes the JSON parser throw an uncaught exception. Though escaping input of such characters might eliminate the symptom, the real problem is the convoluted code for the <code>/highscores.json</code> route. Rather than letting Express handle the JSONifying of the JavaScript object that results from a MongoDB query, the function tries to make JSON manually by string concatenation. However, in the final line, that string is parsed <em>back</em> into an object by <code>JSON.parse()</code>, which is given to Express to send as the response. (Which, of course, is converted to a string again by Express internally via <code>JSON.stringify()</code>.) Therefore, if the strings concatenated contain JSON characters (<code>{</code>, <code>"</code>, etc.), the parser will throw an exception, which ends the server:
+<li>Affects POST API and GET API</li>
+<li><span class="low">Medium</span>: Invalid data can be included in the database, such as an invalid latitude, so a user with a valid login can potentially flood the database with data that should not be allowed, which will be returned in the GET API. This vulnerability allows attackers to enter invalid data in the lat or lng requests, and excessive submission could crash the server.</li>
+<li>By reviewing the code for the <code>'/sendLocation'</code> route, I found that so long as the login, latitude, longitude, and message are not undefined, the entire submission body will be added to the database by <code>coll.insert(toInsert, ...</code>. Because the <code>'/'</code> and <code>'/latest.json'</code> codes simply send the response, the invalid data will still be returned by the database. For example, I used Postman to send invalid data to the <code>'/sendLocation'</code> POST API. The data was successfuly sent with no errors returned and on the Checkins page, you can see the invalid latitude and longitude entires.
 <table class="galleryTable">
-<tr><td><img src="img/malformed-submit.png" alt="Malformed data" title="Malformed data submitted via POST" /></td>
-<td><img src="img/malformed-get.png" alt="GET crashes server" title="GETting the highscores crashes the server" /></td>
-<td><img src="img/malformed-log.png" alt="Server log" title="The unexpected character causes an exception" /></td></tr>
+<tr><td><img src="postman_data.png" alt="Sending POST request" title="Submitting invalid data via POST" /></td>
+<td><img src="bad_data_pic.png" alt="Snapshot of bad data entry" title="Bad Data Entry Allowed" /></td></tr>
 </table></li>
-<li>This issue <em>could</em> be resolved by just wrapping <code>JSON.parse(strJson)</code> in a try/catch block. However, it <em>should</em> be resolved by removing the lengthy string-concatenation part, and just sending the array of results returned by Mongo directly through Express, which JSONifies it automatically. (No need for the <code>strJson</code> part, just call <code>response.send(docs)</code> after sorting.)</li>
-<li><p><strong>Sidenote</strong>: though not a security flaw, I did notice that the scores aren't sorted correctly: <code>/highscores.json</code> gives the <em>latest 10 scores</em> in sorted order, not the top 10 ever. This should be resolved by using a Mongo parameter to sort:</p>
+<li><p>This can be resolved by adding additional checks on the user input. The following only sets the fields to be inserted if the latitude and longitude are within a valid range:</p>
 
-<pre><code>collection.find( { game_title : sanitize(req.query.game_title) }, {
-        sort : { score : -1 },
-        limit : 10,
-    } ).toArray(function(err, docs) {
-        response.send(docs);
-    });
+<pre><code>if (approvedLogins.indexOf(login) != -1 &amp;&amp; message != undefined &amp;&amp; login != undefined &amp;&amp; lat != undefined &amp;&amp; lng != undefined) {
+    lat = parseFloat(lat);
+    lng = parseFloat(lng);
+    if (lat &gt;= -90.0 &amp;&amp; lat &lt;= 90 &amp;&amp; lng &gt;= -180 &amp;&amp; lng &lt;= 180) {
+        var toInsert = {
+            "login":login,
+            "lat":lat,
+            "lng":lng,
+            "message":message,
+            "created_at":new Date()
+        };
+        db.collection('checkins', function(error, coll) { ... } );
 </code></pre></li>
 </ul></li>
-<li><p><strong>Injection of additional database fields</strong></p>
-
-<ul>
-<li>In POST API; affects database only</li>
-<li><span class="low">Low</span>: Arbitrary fields can be included in the database, but they are not currently returned by the GET API, so the only cost is in extra database space and lookups.</li>
-<li>By reviewing the code for the <code>/submit.json</code> route, I found that so long as the submission has the required fields, the entire submission body is added to the database by <code>collection.insert(request.body, ...</code>, including any extraneous fields. Because the <code>/highscores.json</code> code picks fields by name, these extra fields won't come back to a client, but they still take up space in the database.
-<table class="galleryTable">
-<tr><td><img src="img/extra-field-curl.png" alt="Inserting extra fields" title="Submitting extra fields via POST" /></td>
-<td><img src="img/extra-field-mongo.png" alt="Server log" title="All fields are stored in Mongo, including extras" /></td></tr>
-</table></li>
-<li><p>This can be resolved by building an object from only the desired fields:</p>
-
-<pre><code>var score = {
-    game_title : sanitize(req.body.game_title),
-    username : sanitize(req.body.username),
-    score : parseInt(req.body.score),
-    created_at : new Date()
-};
-collection.insert(score, function(err, result) { ... } );
-</code></pre></li>
-</ul></li>
-<li><p><strong>Arbitrary queries and JavaScript execution on Mongo</strong></p>
-
-<ul>
-<li>In user search; affects database execution</li>
-<li><span class="high">High</span>: Given that the <em>least</em> bad thing an attacker could do is perform any query possible on the database, this is serious. However, it is also easy to resolve.</li>
-<li>Reviewing the code for user search, I noticed that the user to look up is a GET parameter, but the Mongo search executes whatever that query is: <code>var cursor = collection.find(request.query)</code>, making anyone able to run any query against the database (and see the results in a pretty table view!) just by passing their query as a parameter.If the database contained private information, this would be a massive security flaw; as it is, all data is publicly available on the homepage. However, using MongoDB's <code>$where</code> query, attackers can execute (limited) JavaScript on the database. Modifying the data isn't possible, but a crude DoS attack can lock up the database with executing a meaningless query: <code>$where: "var a=0; while (true) { a++; }"</code> Simply entering this query into the browser URI bar, it is automatically encoded. When the database doesn't respond to the node server's next request, node aborts with an exception, taking down the site even after the malicious Mongo query times out.
-<table class="galleryTable">
-<tr>
-    <td><img src="img/mongod-top-pre-attack.png" alt="mongod CPU pre-attack" title="Normally, mongod demands few resources" /></td>
-    <td><img src="img/query-string.png" alt="Query string" title="Any query string is sent to Mongo, including this malicious one." /></td>
-    <td><img src="img/query-string-encoded.png" alt="Encoded query string" title="The browser automatically encodes the query for easy attacking" /></td>
-</tr><tr>
-    <td><img src="img/mongod-top-during.png" alt="mongod CPU during attack" title="The infinite loop makes mongod unresponsive..." /></td>
-    <td><img src="img/node-exception.png" alt="node exception" title="...which causes a Node exception when its database requests go unanswered..." /></td>
-    <td><img src="img/server-down.png" alt="Site is down" title="...bringing down the site until mongod and node are restarted." /></td>
-</tr>
-</table></li>
-<li><p>To resolve this, the mongo query should be built explicitly, not taken entirely from user input!</p>
-
-<pre><code>if (request.query.username) {
-    collection.find( { 'username' : sanitize(request.query.username) });
-    //Use data...
-}
-</code></pre></li>
-<li><strong>Sidenote</strong>: were this evaluation conducted a week ago, this would be a significantly greater security flaw. Until MongoDB 2.4, a <a href="http://blog.scrt.ch/2013/03/24/mongodb-0-day-ssji-to-rce/">0-day vulnerability</a> existed which allowed arbitrary database-side execution of native commands. Additionally, the scope of the <code>$where</code> query had read/write access to the full database, allowing queries like <code>{$where: "db.collection.dropDatabase();"}</code>. However, this was fixed just days ago with MongoDB 2.4.</li>
-</ul></li>
-</ol>
 
 <h2>Conclusion</h2>
 
-<p>Issues with ScoreCenter make it easy to render both the site and the clients it serves inoperable. Following the recommendations given will significantly reduce the site's vulnerability to these basic attacks. Fortunately, all the changes are easy to implement. However, the obvious structural vulnerability will still remain, which lets anyone submit any score for any game, meaning that no scores listed can really be trusted. Therefore, though these problems could be fixed at minimal cost, the most prudent action would be to fix the flaws, restructure the API to verify who is submitting scores, and conduct a more thorough follow-up evaluation. Such a task would cost approximately $600, which is a small price to pay for safety, <a href="mailto:gabriel.joseph@tufts.edu">don't you think?</a></p>
+<p>Issues with MapChat make it easy for attackers to change the appearance of the site and send malicious data. If my client follows my recommendations, his/her website's vulnerability will be reduced to these basic attacks.Fortunately, all the changes are easy to implement. With these recommendations, attackers will no longer be able to send scripts to change the website's appearance or re-route the website to a different page. Additionally, users will be able to send only latitudes and longitudes that are within the valid ranges. Therefore, such a task would cost approximately $400, which is a small price to pay for the potential damage that could be done.</p>
 </body>
 </html>
