@@ -19,7 +19,7 @@
 
 <h2>Abstract of Findings</h2>
 
-<p>As with most security issues, all the vulnerabilities in this application stem from putting too much faith in external input and assuming, not asserting, its correctness. Multiple vulnerabilities let an attacker flood the database with invalid data, which can crash the server. Fortunately, the site does prevent anyone with invalid logins from submitting bad data or flooding the database, but users with valid logins can still submit invalid data. For example, users with valid logins can inject malicious data onto the site, which can change the site's appearance, re-route the client to another site, or crash a user's browser. Other websites that store data using the MapChat server are also at risk of the same attacks, unless they use proper security checks against the results that the server gives them.</p>
+<p>Most of the vulnerabilities in this application came from putting too much faith in external input and assuming, not asserting, its correctness. Vulnerabilities were also found by simply allowing bad data to be entered and not checking if the client enters valid data. For example, multiple vulnerabilities let an attacker flood the database with invalid data, which could crash the server. Fortunately, the site does prevent anyone with invalid logins from submitting bad data or flooding the database, but users with valid logins can still submit invalid data. For example, users with valid logins can inject malicious data onto the site, which can change the site's appearance, re-route the client to another site, or crash a user's browser. Other websites that store data using the MapChat server are also at risk of the same attacks, unless they use proper security checks against the results that the server gives them.</p>
 
 <h2>Issues Found</h2>
 
@@ -27,9 +27,9 @@
 <li><p><strong>Cross-Site Scripting</strong></p>
 
 <ul>
-<li>Affects POST API</li>
-<li><span class="high">High</span>: this flaw makes MapChat a significant security risk for other sites that expect it to handle data correctly, so exposing it could cause a mass exodus from the product. However, the issue is easily-resolvable.</li>
-<li>Data submitted via the POST API is not escaped, so it could include JavaScript or HTML (in place of a message) that a client's application would execute if it didn't include its own escaping. Though XSS is avoided on the web interface by escaping brackets (no <code>&lt;script&gt;</code>) and ampersands (<code>&amp;#x3C;</code> won't produce <code>&lt;</code>) an attacker still can use MapChat to attack a client application's code. For example, running <code>curl --data "login=mchow&amp;lat=100&amp;lng=100&amp;message=&lt;script&gt;alert("You've been hacked")&lt;/script&gt;" https://morning-taiga-8499.herokuapp.com/sendLocation</code> will inject the script as the message in the database, and causes an alert to pop up on the checkins site:
+<li>Affects GET API</li>
+<li><span class="high">High</span>: this flaw makes MapChat a significant security risk for other sites that expect it to handle data correctly, so exposing it could cause a mass exodus from the product. In the app.get('/latest.json') function, the database will send an injection script back, even though it is malicious data. However, the issue is easily-resolvable.</li>
+<li>Data submitted via the GET API is not escaped, so it could include JavaScript or HTML (in place of a message) that a client's application would execute if it didn't include its own escaping. Though XSS is avoided on the web interface by escaping brackets (no <code>&lt;script&gt;</code>) and ampersands (<code>&amp;#x3C;</code> won't produce <code>&lt;</code>) an attacker still can use MapChat to attack a client application's code. For example, running <code>curl --data "login=mchow&amp;lat=100&amp;lng=100&amp;message=&lt;script&gt;alert("You've been hacked")&lt;/script&gt;" https://morning-taiga-8499.herokuapp.com/sendLocation</code> will inject the script as the message in the database, and causes an alert to pop up on the checkins site:
 <table class="galleryTable">
 <tr><td><img src="pre-injection_pic.png" alt="pre-injection" title="Site before injection" /></td>
 <td><img src="post-injection_pic.png" alt="post-injection" title="Site after injection" /></td></tr>
@@ -37,12 +37,12 @@
 <li>This issue can be resolved by escaping user input before it enters the database. For example, commonly-dangerous characters can be escaped to their HTML-code equivalents, then the input can be filtered through a whitelist of allowable characters, such as <code>str.match(/[\d\w\s\]|[\~\!\@\#\$\^\*\-\_\+\;]*/g).join('');</code>. This same escaping can be applied retroactively using <code>db.collection.update()</code>. The user input should never be trusted, so it is important to sanitize all data. If you remove the ability for data to be interpreted as code, such as changing &lt; to '&amp;lt' and &gt; to '&amp;gt', XSS payload samples can be avoided.</li>
 </ul></li>
 
-<li><p><strong>Cross-Site Scripting on GET API</strong></p>
+<li><p><strong>Cross-Site Scripting on other GET API</strong></p>
 
 <ul>
 <li>Affects GET API</li>
 <li><span class="mod">High</span>: a simple injection can change the appearance of the website or can re-route clients to a different website, but the vulnerability is very easily resolvable.</li>
-<li>As noted before, the data submitted is not escaped. Therefore, an attacker can submit a script as a message in the data, which can break the website. On the homepage of the website, the client can see the malicious data entered or can be re-routed to a different website. For example, running <code>curl --data "login=mchow&amp;lat=100&amp;lng=100&amp;message=&lt;script&gt;window.location='http://4chan.org'&lt;/script&gt;" https://morning-taiga-8499.herokuapp.com/sendLocation</code> will inject the script as the message in the database, and causes the homepage to be immediately re-routed to 4chan.org.
+<li>As noted before, the data submitted is not escaped. Therefore, an attacker can submit a script as a message in the data, which can break the website. On the Checkins page of the website, the client can see the malicious data entered or can be re-routed to a different website. For example, running <code>curl --data "login=mchow&amp;lat=100&amp;lng=100&amp;message=&lt;script&gt;window.location='http://4chan.org'&lt;/script&gt;" https://morning-taiga-8499.herokuapp.com/sendLocation</code> will inject the script as the message in the database, and causes the homepage to be immediately re-routed to 4chan.org. This affects the app.get('/') function, because the malicious script is sent back to the client and is displayed on the webapge. The client can also be re-routed to any other site or malicious webpage.
 <table class="galleryTable">
 <tr><td><img src="pre-injection_pic.png" alt="pre-injection" title="Site before injection" /></td>
 <td><img src="4chan.png" alt="post-injection" title="Site after injection" /></td></tr>
@@ -55,7 +55,7 @@
 <ul>
 <li>Affects POST API and GET API</li>
 <li><span class="low">Medium</span>: Invalid data can be included in the database, such as an invalid latitude, so a user with a valid login can potentially flood the database with data that should not be allowed, which will be returned in the GET API. This vulnerability allows attackers to enter invalid data in the lat or lng requests, and excessive submission could crash the server.</li>
-<li>By reviewing the code for the <code>'/sendLocation'</code> route, I found that so long as the login, latitude, longitude, and message are not undefined, the entire submission body will be added to the database by <code>coll.insert(toInsert, ...</code>. Because the <code>'/'</code> and <code>'/latest.json'</code> codes simply send the response, the invalid data will still be returned by the database. For example, I used Postman to send invalid data to the <code>'/sendLocation'</code> POST API. The data was successfuly sent with no errors returned and on the Checkins page, you can see the invalid latitude and longitude entires.
+<li>By reviewing the code for the <code>'/sendLocation'</code> route, I found that so long as the login, latitude, longitude, and message are not undefined, the entire submission body will be added to the database by <code>coll.insert(toInsert, ...</code>. Because the <code>'/'</code> and <code>'/latest.json'</code> codes simply send the response, the invalid data will still be returned by the database. For example, I used Postman to send invalid data to the <code>'/sendLocation'</code> POST API. The data was successfuly sent with no errors returned and on the Checkins page, you can see the invalid latitude and longitude entires (-99999 and 99999).
 <table class="galleryTable">
 <tr><td><img src="postman_data.png" alt="Sending POST request" title="Submitting invalid data via POST" /></td>
 <td><img src="bad_data_pic.png" alt="Snapshot of bad data entry" title="Bad Data Entry Allowed" /></td></tr>
@@ -79,6 +79,6 @@
 
 <h2>Conclusion</h2>
 
-<p>Issues with MapChat make it easy for attackers to change the appearance of the site and send malicious data. If my client follows my recommendations, his/her website's vulnerability will be reduced to these basic attacks.Fortunately, all the changes are easy to implement. With these recommendations, attackers will no longer be able to send scripts to change the website's appearance or re-route the website to a different page. Additionally, users will be able to send only latitudes and longitudes that are within the valid ranges. Therefore, such a task would cost approximately $400, which is a small price to pay for the potential damage that could be done.</p>
+<p>Issues with MapChat make it easy for attackers to change the appearance of the site and send malicious data. If my client follows my recommendations, his/her website's vulnerability will be reduced to these basic attacks. Fortunately, all the changes are easy to implement. With these recommendations, attackers will no longer be able to send scripts to change the website's appearance or re-route the website to a different page. Additionally, users will be able to send only latitudes and longitudes that are within the valid ranges. Therefore, such a task would cost approximately $400, which is a small price to pay for the potential damage that could be done.</p>
 </body>
 </html>
